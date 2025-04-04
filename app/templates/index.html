@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Detection System</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #0bb87e;
+            --danger: #e63946;
+            --warning: #fb8500;
+            --light: #f8f9fa;
+            --dark: #212529;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            max-width: 900px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1.5rem 1.5rem 0.5rem;
+        }
+        
+        .header-icon {
+            background-color: var(--primary);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+        
+        .nav-tabs {
+            border-bottom: none;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            color: var(--dark);
+            transition: all 0.2s ease;
+            margin-right: 0.5rem;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            background-color: rgba(67, 97, 238, 0.1);
+        }
+        
+        .nav-tabs .nav-link.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .tab-content {
+            border: none;
+            padding: 2rem;
+        }
+        
+        .form-control {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .form-control:focus {
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.25);
+            border-color: var(--primary);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            border-color: var(--secondary);
+        }
+        
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .phishing {
+            background-color: #fdf1f2;
+            border-left: 5px solid var(--danger);
+        }
+        
+        .legitimate {
+            background-color: #eef9f4;
+            border-left: 5px solid var(--success);
+        }
+        
+        .indicator-list {
+            list-style-type: none;
+            padding-left: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .indicator-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .indicator-list li i {
+            margin-right: 0.75rem;
+            font-size: 1rem;
+        }
+        
+        .phishing .status-icon {
+            color: var(--danger);
+        }
+        
+        .legitimate .status-icon {
+            color: var(--success);
+        }
+        
+        .confidence-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+            overflow: hidden;
+            margin: 0.5rem 0 1rem;
+        }
+        
+        .confidence-level {
+            height: 100%;
+            border-radius: 4px;
+        }
+        
+        .phishing .confidence-level {
+            background-color: var(--danger);
+        }
+        
+        .legitimate .confidence-level {
+            background-color: var(--success);
+        }
+        
+        .loader {
+            display: none;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin-left: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .domain-info {
+            background-color: rgba(67, 97, 238, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .tooltip-icon {
+            cursor: help;
+            color: #6c757d;
+            margin-left: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .header-flex {
+                flex-direction: column;
+                align-items: flex-start !important;
+            }
+            
+            .header-icon {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5 mb-5">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex align-items-center header-flex">
+                    <div class="header-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div>
+                        <h1 class="mb-0 fs-2">AI-Based Phishing Detection</h1>
+                        <p class="text-muted mb-0">Verify URLs and emails to stay protected online</p>
+                    </div>
+                </div>
+                
+                <ul class="nav nav-tabs mt-4" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="url-tab" data-bs-toggle="tab" data-bs-target="#url" type="button" role="tab" aria-selected="true">
+                            <i class="fas fa-link me-2"></i>Check URL
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email" type="button" role="tab" aria-selected="false">
+                            <i class="fas fa-envelope me-2"></i>Check Email
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="tab-content" id="myTabContent">
+                <!-- URL Check Tab -->
+                <div class="tab-pane fade show active" id="url" role="tabpanel" aria-labelledby="url-tab">
+                    <form id="url-form">
+                        <div class="mb-4">
+                            <label for="url-input" class="form-label fw-medium">Enter URL to check</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="url-input" placeholder="https://example.com">
+                            </div>
+                            <small class="form-text text-muted">Enter the full URL including http:// or https://</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-shield-alt me-2"></i>Check URL
+                            </button>
+                            <div class="loader" id="url-loader"></div>
+                        </div>
+                    </form>
+                    <div id="url-result"></div>
+                </div>
+                
+                <!-- Email Check Tab -->
+                <div class="tab-pane fade" id="email" role="tabpanel" aria-labelledby="email-tab">
+                    <form id="email-form">
+                        <div class="mb-4">
+                            <label for="email-input" class="form-label fw-medium">Paste email content (including headers)</label>
+                            <textarea class="form-control" id="email-input" rows="10" placeholder="From: sender@example.com&#10;Subject: Important Information&#10;&#10;Email body content..."></textarea>
+                            <small class="form-text text-muted">Including headers improves detection accuracy</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-shield-alt me-2"></i>Check Email
+                            </button>
+                            <div class="loader" id="email-loader"></div>
+                        </div>
+                    </form>
+                    <div id="email-result"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-info-circle text-primary me-2"></i>About This Tool</h5>
+                <p class="card-text">This AI-powered phishing detection system analyzes URLs and emails to identify potential threats using advanced machine learning algorithms. The system examines various indicators including domain age, link patterns, sender reputation, and content analysis.</p>
+                <p class="card-text text-muted mb-0"><small>Note: While our detection system is highly accurate, no system is perfect. Always use caution when handling suspicious content.</small></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('url-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const url = document.getElementById('url-input').value;
+            const loader = document.getElementById('url-loader');
+            
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+            
+            try {
+                loader.style.display = 'inline-block';
+                
+                const response = await fetch('/api/check-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url }),
+                });
+                
+                const result = await response.json();
+                displayUrlResult(result);
+            } catch (error) {
+                console.error('Error:', error);
+                showError('url-result', 'An error occurred while checking the URL. Please try again.');
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('email-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email-input').value;
+            const loader = document.getElementById('email-loader');
+            
+            if (!email) {
+                alert('Please enter email content');
+                return;
+            }
+            
+            try {
+                loader.style.display = 'inline-block';
+                
+                const response = await fetch('/api/check-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email }),
+                });
+                
+                const result = await response.json();
+                displayEmailResult(result);
+            } catch (error) {
+                console.error('Error:', error);
+                showError('email-result', 'An error occurred while checking the email. Please try again.');
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+        
+        function displayUrlResult(result) {
+            const resultElement = document.getElementById('url-result');
+            const className = result.is_phishing ? 'phishing' : 'legitimate';
+            const status = result.is_phishing ? 'Potential Phishing Detected' : 'Legitimate URL';
+            const statusIcon = result.is_phishing ? 'fa-exclamation-triangle' : 'fa-check-circle';
+            const confidence = Math.round(result.confidence * 100);
+            
+            // Extract domain from URL
+            let domain = result.url;
+            try {
+                domain = new URL(result.url).hostname;
+            } catch (e) {
+                console.error("Could not parse URL:", e);
+            }
+            
+            resultElement.innerHTML = `
+                <div class="result-box ${className}">
+                    <div class="d-flex align-items-center">
+                        <i class="fas ${statusIcon} status-icon me-3" style="font-size: 2rem;"></i>
+                        <div>
+                            <h4 class="mb-0">${status}</h4>
+                            <p class="text-muted mb-0">Confidence assessment</p>
+                        </div>
+                    </div>
+                    
+                    <div class="confidence-bar mt-3">
+                        <div class="confidence-level" style="width: ${confidence}%;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small>Low confidence</small>
+                        <small>${confidence}%</small>
+                        <small>High confidence</small>
+                    </div>
+                    
+                    <div class="domain-info mt-4">
+                        <h5 class="mb-2">URL Information</h5>
+                        <p class="mb-2 text-break"><strong>URL:</strong> ${result.url}</p>
+                        <p class="mb-0"><strong>Domain:</strong> ${domain}</p>
+                    </div>
+                    
+                    <h5 class="mt-4 mb-3">Risk Indicators</h5>
+                    <ul class="indicator-list">
+                        ${result.is_phishing && result.features.has_ip_address ? 
+                            '<li><i class="fas fa-times-circle text-danger"></i>URL contains IP address instead of domain name</li>' : ''}
+                        ${result.is_phishing && !result.features.has_https ? 
+                            '<li><i class="fas fa-times-circle text-danger"></i>Connection is not secure (no HTTPS)</li>' : ''}
+                        ${result.is_phishing && result.features.num_dots > 3 ? 
+                            '<li><i class="fas fa-times-circle text-danger"></i>URL contains excessive dots (${result.features.num_dots})</li>' : ''}
+                        ${!result.is_phishing ? 
+                            '<li><i class="fas fa-check-circle text-success"></i>No suspicious patterns detected</li>' : ''}
+                        ${!result.is_phishing && result.features.has_https ? 
+                            '<li><i class="fas fa-check-circle text-success"></i>Uses secure connection (HTTPS)</li>' : ''}
+                        ${!result.is_phishing && result.features.num_dots <= 3 ? 
+                            '<li><i class="fas fa-check-circle text-success"></i>Normal URL structure</li>' : ''}
+                    </ul>
+                    
+                    <div class="mt-4 pt-2 border-top">
+                        <p class="mb-0">${result.is_phishing ? 
+                            '<i class="fas fa-exclamation-circle text-warning me-2"></i><strong>Recommendation:</strong> Do not visit this URL as it may be attempting to steal your information.' : 
+                            '<i class="fas fa-check-circle text-success me-2"></i><strong>Assessment:</strong> This URL appears to be legitimate based on our analysis.'}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function displayEmailResult(result) {
+            const resultElement = document.getElementById('email-result');
+            const className = result.is_phishing ? 'phishing' : 'legitimate';
+            const status = result.is_phishing ? 'Potential Phishing Detected' : 'Legitimate Email';
+            const statusIcon = result.is_phishing ? 'fa-exclamation-triangle' : 'fa-check-circle';
+            const confidence = Math.round(result.confidence * 100);
+            
+            resultElement.innerHTML = `
+                <div class="result-box ${className}">
+                    <div class="d-flex align-items-center">
+                        <i class="fas ${statusIcon} status-icon me-3" style="font-size: 2rem;"></i>
+                        <div>
+                            <h4 class="mb-0">${status}</h4>
+                            <p class="text-muted mb-0">Confidence assessment</p>
+                        </div>
+                    </div>
+                    
+                    <div class="confidence-bar mt-3">
+                        <div class="confidence-level" style="width: ${confidence}%;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small>Low confidence</small>
+                        <small>${confidence}%</small>
+                        <small>High confidence</small>
+                    </div>
+                    
+                    <h5 class="mt-4 mb-3">Risk Indicators</h5>
+                    <ul class="indicator-list">
+                        ${result.is_phishing && result.features.has_password_mention ? 
+                            '<li><i class="fas fa-times-circle text-danger"></i>Email asks for password or credentials</li>' : ''}
+                        ${result.is_phishing && result.features.subject_has_urgent ? 
+                            '<li><i class="fas fa-times-circle text-danger"></i>Subject contains urgent language to pressure action</li>' : ''}
+                        ${result.is_phishing && result.features.num_links > 3 ? 
+                            '<li><i class="fas fa-times-circle text-danger"></i>Email contains multiple links (${result.features.num_links})</li>' : ''}
+                        ${!result.is_phishing ? 
+                            '<li><i class="fas fa-check-circle text-success"></i>No suspicious patterns detected</li>' : ''}
+                        ${!result.is_phishing && !result.features.has_password_mention ? 
+                            '<li><i class="fas fa-check-circle text-success"></i>No requests for sensitive information</li>' : ''}
+                        ${!result.is_phishing && !result.features.subject_has_urgent ? 
+                            '<li><i class="fas fa-check-circle text-success"></i>No urgent or pressuring language</li>' : ''}
+                    </ul>
+                    
+                    <div class="mt-4 pt-2 border-top">
+                        <p class="mb-0">${result.is_phishing ? 
+                            '<i class="fas fa-exclamation-circle text-warning me-2"></i><strong>Recommendation:</strong> Do not respond or click links in this email as it may be attempting to steal your information.' : 
+                            '<i class="fas fa-check-circle text-success me-2"></i><strong>Assessment:</strong> This email appears to be legitimate based on our analysis.'}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `
+                <div class="alert alert-danger mt-4" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>${message}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
